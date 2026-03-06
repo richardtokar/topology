@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cyber Topology Mission</title>
+  <style>
+    :root {
+      --bg: #040b1f;
+      --panel: #0b1738;
+      --panel-2: #10244f;
+      --text: #e8f3ff;
+      --accent: #34d5ff;
+      --good: #4cffb0;
+      --bad: #ff6178;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, #0c1c45 0%, var(--bg) 52%, #020611 100%);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .screen {
+      background: linear-gradient(160deg, rgba(16, 36, 79, 0.92), rgba(8, 18, 42, 0.95));
+      border: 1px solid rgba(109, 176, 255, 0.35);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 1rem;
+    }
+
+    .hidden { display: none !important; }
+
+    .title {
+      font-size: clamp(1.7rem, 3vw, 2.5rem);
+      margin-bottom: 0.75rem;
+      color: #9be9ff;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .subtext {
+      margin-top: 0.65rem;
+      line-height: 1.5;
+      color: #d5e7ff;
+    }
+
+    .btn {
+      margin-top: 1.2rem;
+      border: 0;
+      border-radius: 12px;
+      padding: 0.9rem 1.2rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #041127;
+      background: linear-gradient(135deg, #58f0ff, #31c8ff);
+      cursor: pointer;
+      min-height: 48px;
+    }
+
+    .btn:focus-visible,
+    .card:focus-visible,
+    .drop-zone:focus-visible {
+      outline: 3px solid #fff;
+      outline-offset: 3px;
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(150px, 1fr));
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+
+    .hud-item {
+      background: rgba(6, 16, 40, 0.82);
+      border: 1px solid rgba(133, 193, 255, 0.3);
+      border-radius: 10px;
+      padding: 0.7rem;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .image-board {
+      position: relative;
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto 1rem;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(133, 193, 255, 0.3);
+      background: #000;
+    }
+
+    .image-board img {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .drop-zone {
+      position: absolute;
+      border: 2px solid transparent;
+      border-radius: 12px;
+      background: rgba(40, 160, 255, 0.02);
+      cursor: pointer;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .drop-zone:hover,
+    .zones-active .drop-zone,
+    .drop-zone:focus-visible {
+      border-color: rgba(119, 215, 255, 0.66);
+      background: rgba(42, 171, 255, 0.08);
+    }
+
+    .zone-flash-correct {
+      border-color: rgba(76, 255, 176, 0.95) !important;
+      box-shadow: inset 0 0 24px rgba(76, 255, 176, 0.45), 0 0 22px rgba(76, 255, 176, 0.5);
+      background: rgba(70, 255, 170, 0.16) !important;
+    }
+
+    .zone-flash-incorrect {
+      border-color: rgba(255, 97, 120, 0.96) !important;
+      box-shadow: inset 0 0 22px rgba(255, 97, 120, 0.42), 0 0 22px rgba(255, 97, 120, 0.5);
+      background: rgba(255, 97, 120, 0.15) !important;
+    }
+
+    .star-zone { left: 2%; top: 4%; width: 30%; height: 92%; }
+    .mesh-zone { left: 35%; top: 4%; width: 30%; height: 92%; }
+    .bus-zone { left: 68%; top: 4%; width: 30%; height: 92%; }
+
+    .feedback {
+      min-height: 76px;
+      border-radius: 10px;
+      border: 1px solid rgba(133, 193, 255, 0.3);
+      background: rgba(5, 16, 38, 0.85);
+      padding: 0.75rem;
+      margin: 0 auto 1rem;
+      max-width: 980px;
+    }
+
+    .feedback.correct { border-color: rgba(76, 255, 176, 0.75); }
+    .feedback.incorrect { border-color: rgba(255, 97, 120, 0.78); }
+
+    .columns {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    @media (min-width: 860px) {
+      .columns { grid-template-columns: 1fr 1fr; }
+    }
+
+    .pile {
+      border: 1px solid rgba(133, 193, 255, 0.3);
+      background: rgba(6, 16, 40, 0.84);
+      border-radius: 12px;
+      padding: 0.8rem;
+      min-height: 160px;
+    }
+
+    .pile h3 { margin-bottom: 0.7rem; color: #9be9ff; }
+
+    .cards { display: grid; gap: 0.65rem; }
+
+    .card {
+      width: 100%;
+      text-align: left;
+      border-radius: 10px;
+      border: 1px solid rgba(155, 210, 255, 0.5);
+      background: linear-gradient(165deg, rgba(22, 45, 92, 0.95), rgba(9, 23, 50, 0.95));
+      color: var(--text);
+      padding: 0.75rem;
+      cursor: grab;
+      min-height: 56px;
+      touch-action: none;
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+
+    .card.selected {
+      border-color: #78edff;
+      box-shadow: 0 0 0 2px rgba(120, 237, 255, 0.45), 0 0 18px rgba(63, 206, 255, 0.5);
+    }
+
+    .card.dragging {
+      opacity: 0.55;
+      transform: scale(0.99);
+      cursor: grabbing;
+    }
+
+    .card.correct {
+      border-color: rgba(76, 255, 176, 0.8);
+      background: rgba(12, 64, 50, 0.78);
+    }
+
+    .card.incorrect {
+      border-color: rgba(255, 97, 120, 0.8);
+      background: rgba(85, 20, 40, 0.78);
+    }
+
+    .tag {
+      display: inline-block;
+      margin-top: 0.4rem;
+      font-size: 0.82rem;
+      padding: 0.18rem 0.45rem;
+      border-radius: 999px;
+      border: 1px solid currentColor;
+    }
+
+    .empty-note { color: #b8cff5; opacity: 0.9; }
+
+    .fact-list { margin-top: 0.75rem; padding-left: 1.2rem; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section id="introScreen" class="screen">
+      <h1 class="title">Cyber Topology Mission</h1>
+      <p class="subtext">Drag (or tap-select) each clue card, then place it on the matching topology panel in the image.</p>
+      <p class="subtext">Each card gets one scored submission only. Wrong placements are counted immediately.</p>
+      <button id="startBtn" class="btn" type="button">Start Mission</button>
+    </section>
+
+    <section id="gameScreen" class="screen hidden" aria-live="polite">
+      <div class="hud">
+        <div class="hud-item" id="scoreDisplay">Score: 0 / 3</div>
+        <div class="hud-item" id="progressDisplay">Resolved: 0 / 3</div>
+      </div>
+
+      <div id="imageBoard" class="image-board" aria-label="Topology image board">
+        <!-- Swap this filename if your image uses a different name. -->
+        <img src="topologies.png" alt="Star, Mesh, and Bus topology panels" />
+        <button class="drop-zone star-zone" data-topology="star" aria-label="Star Topology drop zone" type="button"></button>
+        <button class="drop-zone mesh-zone" data-topology="mesh" aria-label="Mesh Topology drop zone" type="button"></button>
+        <button class="drop-zone bus-zone" data-topology="bus" aria-label="Bus Topology drop zone" type="button"></button>
+      </div>
+
+      <section id="feedbackPanel" class="feedback">
+        Select a question card, then place it on a topology panel.
+      </section>
+
+      <div class="columns">
+        <section class="pile">
+          <h3>Pending Questions</h3>
+          <div id="pendingCards" class="cards"></div>
+        </section>
+        <section class="pile">
+          <h3>Resolved Questions</h3>
+          <div id="resolvedCards" class="cards"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="finalScreen" class="screen hidden">
+      <h2 id="finalTitle" class="title"></h2>
+      <p id="finalScoreText" class="subtext"></p>
+      <h3 style="margin-top: 0.9rem; color: #9be9ff;">Quick Review</h3>
+      <ul class="fact-list">
+        <li>Star topology commonly uses twisted pair.</li>
+        <li>In a star, one failed node usually affects only that node.</li>
+        <li>Mesh topology provides redundancy and fault tolerance.</li>
+      </ul>
+      <button id="resetBtn" class="btn" type="button">Play Again</button>
+    </section>
+  </main>
+
+  <script>
+    // Game question data.
+    const cardsData = [
+      {
+        id: 1,
+        text: "Most common cabling clue: twisted pair is typically used here.",
+        correctTopology: "star",
+        correctExplanation: "Typical star networks commonly use twisted pair Ethernet cabling.",
+        incorrectHint: "Not this one. That twisted-pair clue points to Star Topology."
+      },
+      {
+        id: 2,
+        text: "If one device fails but the rest keeps working, which topology fits?",
+        correctTopology: "star",
+        correctExplanation: "In a star, one failed node usually affects only that device, not the entire network.",
+        incorrectHint: "Not this one. This behavior is the classic Star Topology pattern."
+      },
+      {
+        id: 3,
+        text: "Built for redundancy and fault tolerance to reduce downtime.",
+        correctTopology: "mesh",
+        correctExplanation: "Mesh networks have multiple paths, which gives redundancy and fault tolerance.",
+        incorrectHint: "Not this one. Redundancy and fault tolerance point to Mesh Topology."
+      }
+    ];
+
+    const state = {
+      cards: [],
+      selectedCardId: null,
+      draggingCardId: null,
+      score: 0,
+      resolvedCount: 0,
+      locked: false
+    };
+
+    const introScreen = document.getElementById("introScreen");
+    const gameScreen = document.getElementById("gameScreen");
+    const finalScreen = document.getElementById("finalScreen");
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const imageBoard = document.getElementById("imageBoard");
+    const feedbackPanel = document.getElementById("feedbackPanel");
+    const scoreDisplay = document.getElementById("scoreDisplay");
+    const progressDisplay = document.getElementById("progressDisplay");
+    const pendingCardsContainer = document.getElementById("pendingCards");
+    const resolvedCardsContainer = document.getElementById("resolvedCards");
+    const finalTitle = document.getElementById("finalTitle");
+    const finalScoreText = document.getElementById("finalScoreText");
+    const dropZones = [...document.querySelectorAll(".drop-zone")];
+
+    startBtn.addEventListener("click", () => {
+      introScreen.classList.add("hidden");
+      gameScreen.classList.remove("hidden");
+      initializeGame();
+    });
+
+    resetBtn.addEventListener("click", resetGame);
+
+    // Initialize and reset core state values.
+    function initializeGame() {
+      state.cards = cardsData.map(card => ({ ...card, resolved: false, correct: false, attemptedTopology: null }));
+      state.selectedCardId = null;
+      state.draggingCardId = null;
+      state.score = 0;
+      state.resolvedCount = 0;
+      state.locked = false;
+      feedbackPanel.className = "feedback";
+      feedbackPanel.textContent = "Select a question card, then place it on a topology panel.";
+      renderCards();
+      updateScoreProgress();
+      updateZoneVisibility();
+      bindZoneActions();
+    }
+
+    // Render pending and resolved card lists.
+    function renderCards() {
+      pendingCardsContainer.innerHTML = "";
+      resolvedCardsContainer.innerHTML = "";
+
+      const pendingCards = state.cards.filter(card => !card.resolved);
+      const resolvedCards = state.cards.filter(card => card.resolved);
+
+      if (pendingCards.length === 0) {
+        pendingCardsContainer.innerHTML = '<p class="empty-note">All questions resolved.</p>';
+      }
+
+      if (resolvedCards.length === 0) {
+        resolvedCardsContainer.innerHTML = '<p class="empty-note">Resolved cards will appear here.</p>';
+      }
+
+      pendingCards.forEach(card => pendingCardsContainer.appendChild(createCardElement(card, false)));
+      resolvedCards.forEach(card => resolvedCardsContainer.appendChild(createCardElement(card, true)));
+    }
+
+    // Create each card and attach pointer + keyboard handlers.
+    function createCardElement(card, isResolved) {
+      const cardBtn = document.createElement("button");
+      cardBtn.type = "button";
+      cardBtn.className = "card";
+      cardBtn.dataset.id = String(card.id);
+      cardBtn.textContent = card.text;
+      cardBtn.setAttribute("aria-label", `Question ${card.id}: ${card.text}`);
+
+      if (!isResolved) {
+        if (state.selectedCardId === card.id) cardBtn.classList.add("selected");
+
+        cardBtn.addEventListener("click", () => {
+          handleCardSelection(card.id);
+        });
+
+        cardBtn.addEventListener("pointerdown", (event) => {
+          handleCardPointerDown(event, card.id, cardBtn);
+        });
+      } else {
+        cardBtn.disabled = true;
+        cardBtn.classList.add(card.correct ? "correct" : "incorrect");
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = card.correct
+          ? `Correct → ${formatTopology(card.attemptedTopology)}`
+          : `Incorrect → Picked ${formatTopology(card.attemptedTopology)}`;
+        cardBtn.appendChild(document.createElement("br"));
+        cardBtn.appendChild(tag);
+      }
+
+      return cardBtn;
+    }
+
+    // Handle click/tap selection mode.
+    function handleCardSelection(cardId) {
+      if (state.locked) return;
+      state.selectedCardId = state.selectedCardId === cardId ? null : cardId;
+      renderCards();
+      updateZoneVisibility();
+    }
+
+    // Pointer drag logic for desktop and touch.
+    function handleCardPointerDown(event, cardId, cardEl) {
+      if (state.locked || event.button > 0) return;
+      state.draggingCardId = cardId;
+      state.selectedCardId = cardId;
+      cardEl.classList.add("dragging");
+      renderCards();
+      updateZoneVisibility();
+
+      const pointerId = event.pointerId;
+      cardEl.setPointerCapture(pointerId);
+
+      const onPointerUp = (upEvent) => {
+        cardEl.classList.remove("dragging");
+        cardEl.releasePointerCapture(pointerId);
+        const zone = getZoneFromPoint(upEvent.clientX, upEvent.clientY);
+        if (zone) submitPlacement(zone.dataset.topology);
+        state.draggingCardId = null;
+        cardEl.removeEventListener("pointerup", onPointerUp);
+        cardEl.removeEventListener("pointercancel", onPointerCancel);
+      };
+
+      const onPointerCancel = () => {
+        cardEl.classList.remove("dragging");
+        state.draggingCardId = null;
+        cardEl.removeEventListener("pointerup", onPointerUp);
+        cardEl.removeEventListener("pointercancel", onPointerCancel);
+      };
+
+      cardEl.addEventListener("pointerup", onPointerUp);
+      cardEl.addEventListener("pointercancel", onPointerCancel);
+    }
+
+    // Bind placement actions for tap/click on zone buttons.
+    function bindZoneActions() {
+      dropZones.forEach(zone => {
+        zone.onclick = () => submitPlacement(zone.dataset.topology);
+      });
+    }
+
+    // Submit an answer for the currently selected card.
+    function submitPlacement(topology) {
+      if (state.locked || state.selectedCardId == null) return;
+
+      const card = state.cards.find(item => item.id === state.selectedCardId);
+      if (!card || card.resolved) return;
+
+      state.locked = true;
+      const isCorrect = card.correctTopology === topology;
+      card.resolved = true;
+      card.correct = isCorrect;
+      card.attemptedTopology = topology;
+      state.resolvedCount += 1;
+      if (isCorrect) state.score += 1;
+
+      flashZone(topology, isCorrect);
+      showFeedback(card, isCorrect, topology);
+      state.selectedCardId = null;
+      renderCards();
+      updateScoreProgress();
+      updateZoneVisibility();
+
+      window.setTimeout(() => {
+        state.locked = false;
+        if (state.resolvedCount === state.cards.length) showFinalResults();
+      }, 520);
+    }
+
+    // Update score and progress UI.
+    function updateScoreProgress() {
+      scoreDisplay.textContent = `Score: ${state.score} / ${state.cards.length}`;
+      progressDisplay.textContent = `Resolved: ${state.resolvedCount} / ${state.cards.length}`;
+    }
+
+    // Show immediate feedback after each placement.
+    function showFeedback(card, isCorrect, chosenTopology) {
+      feedbackPanel.className = `feedback ${isCorrect ? "correct" : "incorrect"}`;
+      feedbackPanel.innerHTML = isCorrect
+        ? `<strong>Correct:</strong> ${card.correctExplanation}`
+        : `<strong>Incorrect:</strong> ${card.incorrectHint} You chose <strong>${formatTopology(chosenTopology)}</strong>.`;
+    }
+
+    // Show final screen with mission summary.
+    function showFinalResults() {
+      gameScreen.classList.add("hidden");
+      finalScreen.classList.remove("hidden");
+
+      if (state.score === state.cards.length) {
+        finalTitle.textContent = "Mission Complete: 3/3";
+      } else {
+        finalTitle.textContent = "Mission Complete";
+      }
+      finalScoreText.textContent = `Final Score: ${state.score} / ${state.cards.length}`;
+    }
+
+    // Reset the whole game back to intro.
+    function resetGame() {
+      finalScreen.classList.add("hidden");
+      introScreen.classList.remove("hidden");
+    }
+
+    // Lightly reveal zones when a card is selected for placement.
+    function updateZoneVisibility() {
+      imageBoard.classList.toggle("zones-active", state.selectedCardId != null);
+    }
+
+    // Find which drop zone is under the pointer location.
+    function getZoneFromPoint(x, y) {
+      const element = document.elementFromPoint(x, y);
+      return element && element.classList.contains("drop-zone") ? element : null;
+    }
+
+    // Flash zone result briefly after submit.
+    function flashZone(topology, isCorrect) {
+      const zone = dropZones.find(z => z.dataset.topology === topology);
+      if (!zone) return;
+      const cls = isCorrect ? "zone-flash-correct" : "zone-flash-incorrect";
+      zone.classList.add(cls);
+      window.setTimeout(() => zone.classList.remove(cls), 500);
+    }
+
+    function formatTopology(value) {
+      return `${value.charAt(0).toUpperCase()}${value.slice(1)} Topology`;
+    }
+  </script>
+</body>
+</html>
